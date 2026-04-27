@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATTENDANCE SYSTEM</title>
+
+<style>
+body { font-family: Arial; margin:20px; background:#f4f6fb; }
+h2 { text-align:center; }
+
+#adminPanel { display:none; }
+
+input, button { padding:10px; margin:5px; }
+
+.card {
+  background:#fff;
+  border-radius:10px;
+  padding:15px;
+  margin:10px 0;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+button { cursor:pointer; }
+</style>
+</head>
+
+<body>
+
+<h2>INJECTION LINE ATTENDANCE</h2>
+
+<!-- ADMIN LOGIN -->
+<div class="card">
+  <h3>Admin Login</h3>
+  <input type="password" id="adminPass" placeholder="Enter Admin Password">
+  <button onclick="loginAdmin()">Login</button>
+</div>
+
+<!-- WORKER VIEW -->
+<div class="card">
+  <h3>Worker View</h3>
+  <input type="text" id="workerId" placeholder="Enter Worker ID">
+  <button onclick="viewWorker()">Check</button>
+</div>
+
+<hr>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel">
+
+  <h2>👨‍💼 Admin Dashboard</h2>
+
+  <div class="card">
+    <input type="text" id="newWorker" placeholder="Add Worker ID">
+    <button onclick="addWorker()">Add Worker</button>
+  </div>
+
+  <div id="workersList"></div>
+
+</div>
+
+<div id="workerView"></div>
+
+<script>
+
+const ADMIN_PASSWORD = "13792";
+
+// DATE
+let d = new Date();
+let formattedToday =
+  d.getFullYear() + "-" +
+  String(d.getMonth()+1).padStart(2,"0") + "-" +
+  String(d.getDate()).padStart(2,"0");
+
+// DATA
+let data = JSON.parse(localStorage.getItem("data")) || {
+  "W001": { present:0, absent:0, leave:0, records:{} },
+  "W002": { present:0, absent:0, leave:0, records:{} }
+};
+
+function save(){
+  localStorage.setItem("data", JSON.stringify(data));
+}
+
+/* ================= ADMIN LOGIN ================= */
+function loginAdmin(){
+  let pass = document.getElementById("adminPass").value;
+
+  if(pass === ADMIN_PASSWORD){
+    document.getElementById("adminPanel").style.display = "block";
+    renderAdmin();
+  } else {
+    alert("Wrong password");
+  }
+}
+
+/* ================= ADD WORKER ================= */
+function addWorker(){
+  let id = document.getElementById("newWorker").value.trim();
+
+  if(id && !data[id]){
+    data[id] = { present:0, absent:0, leave:0, records:{} };
+    save();
+    renderAdmin();
+  }
+}
+
+/* ================= DELETE WORKER ================= */
+function deleteWorker(id){
+  delete data[id];
+  save();
+  renderAdmin();
+}
+
+/* ================= ATTENDANCE (FIXED) ================= */
+function present(id){
+  data[id].records[formattedToday] = "present";
+  data[id].present++;
+  save();
+  renderAdmin();
+}
+
+function absent(id){
+  data[id].records[formattedToday] = "absent";
+  data[id].absent++;
+  save();
+  renderAdmin();
+}
+
+function leave(id){
+  data[id].records[formattedToday] = "leave";
+  data[id].leave++;
+  save();
+  renderAdmin();
+}
+
+/* ================= CONTROL ================= */
+function addPresent(id){ data[id].present++; save(); renderAdmin(); }
+function reducePresent(id){ if(data[id].present>0) data[id].present--; save(); renderAdmin(); }
+
+function addAbsent(id){ data[id].absent++; save(); renderAdmin(); }
+function reduceAbsent(id){ if(data[id].absent>0) data[id].absent--; save(); renderAdmin(); }
+
+function addLeave(id){ data[id].leave++; save(); renderAdmin(); }
+function reduceLeave(id){ if(data[id].leave>0) data[id].leave--; save(); renderAdmin(); }
+
+/* ================= ADMIN UI ================= */
+function renderAdmin(){
+  let list = document.getElementById("workersList");
+  list.innerHTML = "";
+
+  for(let id in data){
+    list.innerHTML += `
+      <div class="card">
+        <h3>${id}</h3>
+
+        <p>
+          ✔ Present: ${data[id].present} |
+          ❌ Absent: ${data[id].absent} |
+          🟡 Leave: ${data[id].leave}
+        </p>
+
+        <button onclick="present('${id}')">✔</button>
+        <button onclick="absent('${id}')">❌</button>
+        <button onclick="leave('${id}')">🟡</button>
+
+        <br><br>
+
+        <button onclick="addPresent('${id}')">➕P</button>
+        <button onclick="reducePresent('${id}')">➖P</button>
+
+        <button onclick="addAbsent('${id}')">➕A</button>
+        <button onclick="reduceAbsent('${id}')">➖A</button>
+
+        <button onclick="addLeave('${id}')">➕L</button>
+        <button onclick="reduceLeave('${id}')">➖L</button>
+
+        <br><br>
+
+        <button onclick="deleteWorker('${id}')">🗑 Delete</button>
+      </div>
+    `;
+  }
+}
+
+/* ================= WORKER VIEW (FIXED DATE DISPLAY) ================= */
+function viewWorker(){
+  let id = document.getElementById("workerId").value.trim();
+  let view = document.getElementById("workerView");
+
+  if(data[id]){
+    let history = "";
+
+    for(let date in data[id].records){
+      let status = data[id].records[date];
+
+      let icon = "";
+      if(status === "present") icon = "✔";
+      if(status === "absent") icon = "❌";
+      if(status === "leave") icon = "🟡";
+
+      history += "<li>" + icon + " " + date + " : " + status + "</li>";
+    }
+
+    if(history === ""){
+      history = "<li>No records yet</li>";
+    }
+
+    view.innerHTML = `
+      <div class="card">
+        <h2>👷 ${id}</h2>
+
+        <p>✔ Present: ${data[id].present}</p>
+        <p>❌ Absent: ${data[id].absent}</p>
+        <p>🟡 Leave: ${data[id].leave}</p>
+
+        <h3>📅 History</h3>
+        <ul>${history}</ul>
+      </div>
+    `;
+  } else {
+    view.innerHTML = "<p style='color:red;'>Worker not found</p>";
+  }
+}
+
+</script>
+
+</body>
+</html>
