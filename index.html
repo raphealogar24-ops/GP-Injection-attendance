@@ -7,6 +7,29 @@
 <title>ATTENDANCE SYSTEM</title>
 
 <style>
+  const firebaseConfig = {
+  apiKey: "XXXX",
+  authDomain: "XXXX",
+  projectId: "XXXX",
+  storageBucket: "XXXX",
+  messagingSenderId: "XXXX",
+  appId: "XXXX"
+};
+ <input type="text" id="name" placeholder="Enter your name">
+
+<button onclick="saveAttendance()">Mark Present</button>
+
+<table border="1">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Status</th>
+      <th>Date</th>
+      <th>Time</th>
+    </tr>
+  </thead>
+  <tbody id="table"></tbody>
+</table> 
 body { font-family: Arial; margin:20px; background:#f4f6fb; }
 h2 { text-align:center; }
 
